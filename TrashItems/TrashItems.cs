@@ -325,31 +325,24 @@ namespace TrashItems
             if (dialog != null)
                 return;
 
-            dialog = Instantiate(InventoryGui.instance.m_splitPanel.gameObject, InventoryGui.instance.transform);
+            dialog = Instantiate(InventoryGui.instance.m_splitDialog.gameObject, InventoryGui.instance.transform);
 
-            var okButton = dialog.transform.Find("win_bkg/Button_ok").GetComponent<Button>();
-            okButton.onClick.RemoveAllListeners();
-            okButton.onClick.AddListener(new UnityAction(OnConfirm));
+            var splitDialog = dialog.GetComponent<SplitDialog>();
+            splitDialog.SplitAccepted += OnConfirm;
+            splitDialog.SplitCanceled += OnCancel;
+
+            var okButton = (Button) AccessTools.Field(typeof(SplitDialog), "m_splitOkButton").GetValue(splitDialog);
             okButton.GetComponentInChildren<TextMeshProUGUI>().text = "Trash";
             okButton.GetComponentInChildren<TextMeshProUGUI>().color = new Color(1, 0.2f, 0.1f);
 
-            var cancelButton = dialog.transform.Find("win_bkg/Button_cancel").GetComponent<Button>();
-            cancelButton.onClick.RemoveAllListeners();
-            cancelButton.onClick.AddListener(new UnityAction(OnCancel));
+            splitDialog.m_splitSlider.gameObject.SetActive(false);
+            splitDialog.UpdateIcon(item.GetIcon(), Localization.instance.Localize(item.m_shared.m_name));
 
-            dialog.transform.Find("win_bkg/Slider").gameObject.SetActive(false);
+            splitDialog.SetActive(true);
 
-            var text = dialog.transform.Find("win_bkg/Text").GetComponent<TextMeshProUGUI>();
-            text.text = Localization.instance.Localize(item.m_shared.m_name);
-
-            var icon = dialog.transform.Find("win_bkg/Icon_bkg/Icon").GetComponent<Image>();
-            icon.sprite = item.GetIcon();
-
-            var amount = dialog.transform.Find("win_bkg/amount").GetComponent<TextMeshProUGUI>();
-
+            // Set after activation: enabling the dialog resets this text to the slider value
+            var amount = (TMP_Text) AccessTools.Field(typeof(SplitDialog), "m_splitAmount").GetValue(splitDialog);
             amount.text = itemAmount + "/" + item.m_shared.m_maxStackSize;
-
-            dialog.gameObject.SetActive(true);
         }
 
         public static void OnConfirm()
@@ -405,7 +398,7 @@ namespace TrashItems
             {
                 TrashItems.TrashItem();
                 // Switch back to inventory iab
-                typeof(InventoryGui).GetMethod("SetActiveGroup", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(InventoryGui.instance, new object[] { 1, false });
+                AccessTools.Method(typeof(InventoryGui), "SetActiveGroup", new[] { typeof(int), typeof(bool) }).Invoke(InventoryGui.instance, new object[] { 1, false });
             }
         }
     }
