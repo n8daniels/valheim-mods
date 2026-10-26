@@ -216,8 +216,10 @@ namespace TrashItems
 
                 if (canvas == null) yield break;
 
+                // Sorting orders of nested canvases are absolute, so sit one above the inventory's own canvas
+                var parentCanvas = transform.GetComponentInParent<Canvas>();
                 canvas.overrideSorting = true;
-                canvas.sortingOrder = 1;
+                canvas.sortingOrder = parentCanvas != null ? parentCanvas.sortingOrder + 1 : 1;
             }
 
             public void SetText(string text)
